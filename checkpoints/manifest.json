@@ -1,0 +1,62 @@
+{
+  "ntu60_xsub": {
+    "file": "checkpoints/ntu60_xsub.pt",
+    "epoch": 486,
+    "logged_top1": 91.835991993692,
+    "paper_top1": 91.8,
+    "sha256": "06ce9d74c081571918a3c103d15fe1837fe2d9ebd0daafbe6dab76a170cb6cc0",
+    "verified": {
+      "samples": 16487,
+      "top1": 91.835991993692,
+      "top5": 98.19858069994542
+    }
+  },
+  "ntu60_xview": {
+    "file": "checkpoints/ntu60_xview.pt",
+    "epoch": 488,
+    "logged_top1": 95.89055567293472,
+    "paper_top1": 95.9,
+    "sha256": "48045b541b8ebdd9544040151ce2dcc0b039f110baa6b5c9318e4e606b2a843f",
+    "verified": {
+      "samples": 18932,
+      "top1": 95.89055567293471,
+      "top5": 99.20769068244243
+    }
+  },
+  "ntu120_xsub": {
+    "file": "checkpoints/ntu120_xsub.pt",
+    "epoch": 496,
+    "logged_top1": 87.4702959602506,
+    "paper_top1": 87.5,
+    "sha256": "775934210a79f16b7de41b16924beae27617768dc703d3d134990b33f9384c0b",
+    "verified": {
+      "samples": 50919,
+      "top1": 87.4702959602506,
+      "top5": 97.53333726114025
+    }
+  },
+  "ntu120_xset": {
+    "file": "checkpoints/ntu120_xset.pt",
+    "epoch": 490,
+    "logged_top1": 89.10166955293643,
+    "paper_top1": 89.1,
+    "sha256": "28add522342c63f4b4849be36c2354fbd3db4061122dce74fc3bcbf2363f7585",
+    "verified": {
+      "samples": 59477,
+      "top1": 89.10166955293643,
+      "top5": 97.55535753316408
+    }
+  },
+  "nwucla": {
+    "file": "checkpoints/nwucla.pt",
+    "epoch": 456,
+    "logged_top1": 96.12068965517241,
+    "paper_top1": 96.1,
+    "sha256": "fe1aa0e84bb2eca231eb80f0826ceb26626cd477bdcdaa1e4bfd4e931fcdeb25",
+    "verified": {
+      "samples": 464,
+      "top1": 96.12068965517241,
+      "top5": 99.78448275862068
+    }
+  }
+}

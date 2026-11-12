@@ -1,0 +1,65 @@
+phase: test  # train or test
+weights: checkpoints/ntu120_xsub.pt
+work_dir: runs/ntu120_xsub
+model: ntu
+model_args:
+  config:
+  - - 96
+    - 96
+    - 3
+  - - 96
+    - 96
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  dropout: 0
+  num_classes: 120
+  num_frame: 32
+  num_person: 2
+  num_point: 25
+data_path: datasets/NTU120_CSub.npz
+train_data:
+  aug_method: a123489
+  inter_p: 0.2
+  intra_p: 0.5
+  p_interval:
+  - 0.5
+  - 1
+  split: train
+  thres: 64
+  window_size: 128
+test_data:
+  p_interval:
+  - 0.95
+  split: test
+  thres: 64
+  window_size: 128
+training:
+  seed: 3407
+  num_epoch: 500
+  batch_size: 128
+  test_batch_size: 128
+  num_worker: 8
+  base_lr: 0.001
+  min_lr: 1.0e-05
+  warm_up_epoch: 25
+  warmup_lr: 5.0e-07
+  warmup_prefix: false
+  weight_decay: 0.1
+  grad_max: 1.0

@@ -7,50 +7,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def valid_crop_resize(data_numpy, valid_frame_num, p_interval, window, thres):
-    # input: C,T,V,M
-    C, T, V, M = data_numpy.shape
-    begin = 0
-    end = valid_frame_num
-    valid_size = end - begin
-
-    # crop
-    if len(p_interval) == 1:
-        p = p_interval[0]
-        bias = int((1 - p) * valid_size / 2)
-        data = data_numpy[:, begin + bias:end - bias, :, :]  # center_crop
-        cropped_length = data.shape[1]
-        c_b = begin + bias
-        c_e = end - bias
-    else:
-        p = np.random.rand(1) * (p_interval[1] - p_interval[0]) + p_interval[0]
-        cropped_length = np.minimum(np.maximum(int(np.floor(valid_size * p)), thres), valid_size)  # constraint cropped_length lower bound as thres
-        bias = np.random.randint(0, valid_size - cropped_length + 1)
-        data = data_numpy[:, begin + bias:begin + bias + cropped_length, :, :]
-        if data.shape[1] == 0:
-            print(cropped_length, bias, valid_size)
-        c_b = begin + bias
-        c_e = begin + bias + cropped_length
-
-    # resize
-    data = torch.tensor(data, dtype=torch.float)  # C, crop_t, V, M
-    data = data.permute(2, 3, 0, 1).contiguous().view(V * M, C, cropped_length)  # V*M, C, crop_t
-    data = F.interpolate(data, size=window, mode='linear', align_corners=False)  # V*M, C, T
-    data = data.contiguous().view(V, M, C, window).permute(2, 3, 0, 1).contiguous().numpy()
-    index_t = torch.arange(start=c_b, end=c_e, dtype=torch.float)
-    index_t = F.interpolate(index_t[None, None, :], size=window, mode='linear', align_corners=False).squeeze()
-    index_t = 2 * index_t / valid_size - 1
-    return data, index_t.numpy()
+transform_order = {'ntu': [0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 20, 23, 24, 21, 22]}
 
 
 def valid_crop_uniform(data_numpy, valid_frame_num, p_interval, window, thres):
-    # input: C,T,V,M
+
     C, T, V, M = data_numpy.shape
     begin = 0
     end = valid_frame_num
     valid_size = end - begin
 
-    # crop
+
     if len(p_interval) == 1:
         p = p_interval[0]
         cropped_length = np.minimum(np.maximum(int(np.floor(valid_size * p)), thres), valid_size)
@@ -70,7 +37,7 @@ def valid_crop_uniform(data_numpy, valid_frame_num, p_interval, window, thres):
     else:
         p = np.random.rand(1) * (p_interval[1] - p_interval[0]) + p_interval[0]
         cropped_length = np.minimum(np.maximum(int(np.floor(valid_size * p)), thres),
-                                    valid_size)  # constraint cropped_length lower bound as 64
+                                    valid_size)
         bias = np.random.randint(0, valid_size - cropped_length + 1)
 
         if cropped_length < window:
@@ -94,13 +61,13 @@ def valid_crop_uniform(data_numpy, valid_frame_num, p_interval, window, thres):
         if data.shape[1] == 0:
             print(cropped_length, bias, valid_size)
 
-    # resize
+
     data = torch.tensor(data, dtype=torch.float)
     index_t = torch.tensor(inds, dtype=torch.float)
-    data = data.permute(2, 3, 0, 1).contiguous().view(V * M, C, len(inds))  # V*M, C, crop_t
+    data = data.permute(2, 3, 0, 1).contiguous().view(V * M, C, len(inds))
 
     if len(inds) != window:
-        data = F.interpolate(data, size=window, mode='linear', align_corners=False)  # V*M, C, T
+        data = F.interpolate(data, size=window, mode='linear', align_corners=False)
         index_t = F.interpolate(index_t[None, None, :], size=window, mode='linear', align_corners=False).squeeze()
 
     data = data.contiguous().view(V, M, C, window).permute(2, 3, 0, 1).contiguous().numpy()
@@ -114,33 +81,6 @@ def scale(data_numpy, scale=0.2, p=0.5):
         return data_numpy * scale
     else:
         return data_numpy.copy()
-
-
-''' AimCLR '''
-transform_order = {'ntu': [0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 20, 23, 24, 21, 22]}
-
-
-def subtract(data_numpy, p=0.5):
-    joint = random.randint(0, 24)
-
-    C, T, V, M = data_numpy.shape
-    if random.random() < p:
-        data_numpy_new = np.zeros((C, T, V, M))
-        for i in range(V):
-            data_numpy_new[:, :, i, :] = data_numpy[:, :, i, :] - data_numpy[:, :, joint, :]
-        return data_numpy_new
-    else:
-        return data_numpy.copy()
-
-
-def temporal_flip(data_numpy, index_t, p=0.5):
-    C, T, V, M = data_numpy.shape
-    if random.random() < p:
-        time_range_order = [i for i in range(T)]
-        time_range_reverse = list(reversed(time_range_order))
-        return data_numpy[:, time_range_reverse, :, :], -index_t
-    else:
-        return data_numpy.copy(), index_t.copy()
 
 
 def spatial_flip(data_numpy, p=0.5):
@@ -165,17 +105,17 @@ def rotate(data_numpy, axis=None, angle=None, p=0.5):
     if random.random() < p:
         temp = data_numpy.copy()
         angle = math.radians(angle_next)
-        # x
+
         if axis_next == 0:
             R = np.array([[1, 0, 0],
                           [0, math.cos(angle), math.sin(angle)],
                           [0, -math.sin(angle), math.cos(angle)]])
-        # y
+
         if axis_next == 1:
             R = np.array([[math.cos(angle), 0, -math.sin(angle)],
                           [0, 1, 0],
                           [math.sin(angle), 0, math.cos(angle)]])
-        # z
+
         if axis_next == 2:
             R = np.array([[math.cos(angle), math.sin(angle), 0],
                           [-math.sin(angle), math.cos(angle), 0],
@@ -261,70 +201,25 @@ def drop_joint(data_numpy, joint_list=None, time_range=None, p=0.5):
         return data_numpy.copy()
 
 
-def gaussian_noise(data_numpy, mean=0, std=0.05, p=0.5):
-    if random.random() < p:
-        temp = data_numpy.copy()
-        C, T, V, M = data_numpy.shape
-        noise = np.random.normal(mean, std, size=(C, T, V, M))
-        return temp + noise
-    else:
-        return data_numpy.copy()
-
-
-class GaussianBlurConv(nn.Module):
-    def __init__(self, channels=3, kernel=15, sigma=[0.1, 2], p=0.5):
-        super(GaussianBlurConv, self).__init__()
-        self.channels = channels
-        self.kernel = kernel
-        self.min_max_sigma = sigma
-        radius = int(kernel / 2)
-        self.kernel_index = np.arange(-radius, radius + 1)
-        self.p = p
-
-    def __call__(self, x):
-        sigma = random.uniform(self.min_max_sigma[0], self.min_max_sigma[1])
-        blur_flter = np.exp(-np.power(self.kernel_index, 2.0) / (2.0 * np.power(sigma, 2.0)))
-        kernel = torch.from_numpy(blur_flter).unsqueeze(0).unsqueeze(0)
-        # kernel =  kernel.float()
-        kernel = kernel.double()
-        kernel = kernel.repeat(self.channels, 1, 1, 1)
-        self.weight = nn.Parameter(data=kernel, requires_grad=False)
-
-        prob = np.random.random_sample()
-        x = torch.from_numpy(x).double()
-        if prob < self.p:
-            x = x.permute(3, 0, 2, 1)
-            x = F.conv2d(x, self.weight, padding=(0, int((self.kernel - 1) / 2)), groups=self.channels)
-            x = x.permute(1, -1, -2, 0)
-
-        return x.numpy()
-
-
-def gaussian_filter(data_numpy, kernel=15, sig_list=[0.1, 2], p=0.5):
-    g = GaussianBlurConv(3, kernel, sig_list, p)
-    return g(data_numpy)
-
-
-''' Skeleton AdaIN '''
-def skeleton_adain_bone_length(input, ref): # C T V M
+def skeleton_adain_bone_length(input, ref):
     eps = 1e-5
     center = 1
     ref_c = ref[:, :, center, :]
 
-    # joint to bone (joint2bone)
+
     j2b = joint2bone()
-    bone_i = j2b(input) # C T V M
+    bone_i = j2b(input)
     bone_r = j2b(ref)
 
-    bone_length_i = np.linalg.norm(bone_i, axis=0) # T V M
+    bone_length_i = np.linalg.norm(bone_i, axis=0)
     bone_length_r = np.linalg.norm(bone_r, axis=0)
 
-    bone_length_scale = (bone_length_r + eps) / (bone_length_i + eps) # T V M
-    bone_length_scale = np.expand_dims(bone_length_scale, axis=0) # 1 T V M
+    bone_length_scale = (bone_length_r + eps) / (bone_length_i + eps)
+    bone_length_scale = np.expand_dims(bone_length_scale, axis=0)
 
     bone_i = bone_i * bone_length_scale
 
-    # bone to joint (bone2joint)
+
     b2j = bone2joint()
     joint = b2j(bone_i, ref_c)
     return joint
@@ -371,9 +266,3 @@ class bone2joint(nn.Module):
         for v1, v2 in self.pairs_6:
             joint[:, :, v1, :] = bone[:, :, v1, :] + joint[:, :, v2, :]
         return joint
-
-def to_motion(input): # C T V M
-    C, T, V, M = input.shape
-    motion = np.zeros_like(input)
-    motion[:, :T - 1] = np.diff(input, axis=1)
-    return motion

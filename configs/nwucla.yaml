@@ -1,0 +1,58 @@
+phase: test  # train or test
+weights: checkpoints/nwucla.pt
+work_dir: runs/nwucla
+model: nwucla
+model_args:
+  config:
+  - - 96
+    - 96
+    - 3
+  - - 96
+    - 96
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  - - 192
+    - 192
+    - 3
+  dropout: 0
+  num_classes: 10
+  num_frame: 32
+  num_person: 1
+  num_point: 20
+data_path: datasets/NW-UCLA
+train_data:
+  label_path: train
+  p: 0.5
+  partition: true
+  repeat: 10
+test_data:
+  label_path: val
+  partition: true
+  repeat: 1
+training:
+  seed: 1
+  num_epoch: 500
+  batch_size: 256
+  test_batch_size: 256
+  num_worker: 8
+  base_lr: 0.01
+  min_lr: 0.0001
+  warm_up_epoch: 25
+  warmup_lr: 5.0e-07
+  warmup_prefix: false
+  weight_decay: 0.1
+  grad_max: 1.0
